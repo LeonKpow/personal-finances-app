@@ -1,3 +1,6 @@
+#For testing purposes:
+setwd("C:/Users/wooge/OneDrive/Documents/GitHub/personal-finances-app")
+
 # STEP 1 - read in the data
 # ---------------------------------------------------------- #
 financials <- gs_title("Finances Tracking 2015/16")

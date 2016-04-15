@@ -6,17 +6,24 @@ library(timeDate)
 library(zoo)
 
 # read in and pre-process the data
-source("helpers.R")
-# source("readAndPreProcessData - googlesheets.R")
+source("readAndPreProcessData.R")
 
 # server.R
 
 shinyServer(
   function(input, output) {
-    financials_combined <- NULL
     
+    #Re-read the data if the action button is clicked
     observeEvent(input$updateData, {
-      source("readAndPreProcessData - googlesheets.R")
+      source("readAndPreProcessData.R")
+    })
+    
+    #Code to dynamically set input date ranges
+    output$dateControls <- renderUI({
+      dateRangeInput("financialsDateRange",
+                     "Date range to analyse financials over",
+                     start = minDateInData,
+                     end = maxDateInData)
     })
 
     output$transactions <- renderPlot({

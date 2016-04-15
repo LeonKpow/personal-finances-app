@@ -7,6 +7,8 @@ shinyUI(fluidPage(
     sidebarPanel(
       helpText("Shiny app to help visualise my financial spending."),
       
+      uiOutput("dateControls"),
+      
       actionButton("updateData", "Refresh Data")
     ),
 
