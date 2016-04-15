@@ -1,5 +1,5 @@
 #For testing purposes:
-setwd("C:/Users/wooge/OneDrive/Documents/GitHub/personal-finances-app")
+#setwd("C:/Users/wooge/OneDrive/Documents/GitHub/personal-finances-app")
 
 # STEP 1 - read in the data
 # ---------------------------------------------------------- #
@@ -104,14 +104,21 @@ financials_combined$netInflow <- financials_combined$inflow - financials_combine
 # order by date of entries
 financials_combined <- financials_combined[order(financials_combined$date), ]
 
+# perform cumulative net inflow calculation
+financials_combined$cumulativeNetInflow <- cumsum(financials_combined$netInflow)
+
 # create truncated monthly values
 financials_combined$monthOfTransaction <- as.Date(format(financials_combined$date, format = "%Y-%m-01"))
+
+# create an inflow/outflow field
+financials_combined$transactionType <- ifelse(financials_combined$inflow==0, "outflow", "inflow")
 
 # declare fields as factors
 financials_combined$counterparty <- as.factor(financials_combined$counterparty)
 financials_combined$category1 <- as.factor(financials_combined$category1)
 financials_combined$category2 <- as.factor(financials_combined$category2)
 financials_combined$category3 <- as.factor(financials_combined$category3)
+financials_combined$transactionType <- as.factor(financials_combined$transactionType)
 
 # STEP 8 - determine the min/max dates in the data as well as most recent month of data possible
 # ------------------------------------------------------------------------------------------------- #

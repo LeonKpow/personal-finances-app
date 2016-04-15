@@ -27,7 +27,9 @@ shinyServer(
     })
 
     output$transactions <- renderPlot({
-      ggplot(financials_combined, aes(x = date, y = inflow)) + geom_line()
+      ggplot(financials_combined) +
+      geom_bar(aes(date, netInflow, fill = transactionType), stat = "identity", position = "dodge") + 
+      geom_line(aes(date, cumulativeNetInflow))
     })
 
   }
