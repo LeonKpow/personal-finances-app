@@ -1,7 +1,7 @@
 # ui.R
 
 shinyUI(fluidPage(
-  titlePanel("Summary of Finances"),
+  titlePanel("Inflow and Outflow Summary"),
 
   sidebarLayout(
     sidebarPanel(

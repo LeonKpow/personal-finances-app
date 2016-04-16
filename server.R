@@ -25,9 +25,15 @@ shinyServer(
                      start = minDateInData,
                      end = maxDateInData)
     })
+    
+    dataToPlot <- reactive({
+      plotData <- financials_combined[(financials_combined$date >= input$financialsDateRange[1]) & (financials_combined$date <= input$financialsDateRange[2]), ]
+      plotData$cumulativeNetInflow <- cumsum(plotData$netInflow)
+      return(plotData)
+    })
 
     output$transactions <- renderPlot({
-      ggplot(financials_combined) +
+      ggplot(dataToPlot()) +
       geom_bar(aes(date, netInflow, fill = transactionType), stat = "identity", position = "dodge") + 
       geom_line(aes(date, cumulativeNetInflow))
     })
