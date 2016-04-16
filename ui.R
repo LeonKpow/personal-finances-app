@@ -9,9 +9,29 @@ shinyUI(fluidPage(
       
       uiOutput("dateControls"),
       
+      br(),
+      
+      conditionalPanel(
+        "$('li.active a').first().html()==='Expenditure Breakdown'",
+        actionButton("bar","Bar"),
+        
+        br()
+      ),
+      
       actionButton("updateData", "Refresh Data")
     ),
 
-    mainPanel(plotOutput("transactions"))
+    mainPanel(
+      tabsetPanel(
+        tabPanel("Inflow/Outflow",
+          plotOutput("transactions"),
+          br(),
+          textOutput("summaryTotalsText"),
+          br(),
+          tableOutput("summaryTotals")
+        ),
+        tabPanel("Expenditure Breakdown", textOutput("textPointer"))
+      )
+    )
   )
 ))

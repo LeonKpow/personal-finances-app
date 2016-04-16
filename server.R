@@ -26,17 +26,39 @@ shinyServer(
                      end = maxDateInData)
     })
     
+    #Subset data based on date ranges
     dataToPlot <- reactive({
       plotData <- financials_combined[(financials_combined$date >= input$financialsDateRange[1]) & (financials_combined$date <= input$financialsDateRange[2]), ]
       plotData$cumulativeNetInflow <- cumsum(plotData$netInflow)
-      return(plotData)
+      totals <- data.frame(sum(plotData$inflow), sum(plotData$outflow), sum(plotData$netInflow))
+      colnames(totals) <- c("inflow", "outflow", "netInflow")
+      
+      return(list(el1 = plotData, el2 = totals))
     })
 
+    #Plot Inflow/Outflows
     output$transactions <- renderPlot({
-      ggplot(dataToPlot()) +
+      ggplot(dataToPlot()$el1) +
       geom_bar(aes(date, netInflow, fill = transactionType), stat = "identity", position = "dodge") + 
       geom_line(aes(date, cumulativeNetInflow))
     })
+    
+    #Summarise totals and print
+    output$summaryTotalsText <- renderText(
+      paste(
+        "Totals over the period from",
+        input$financialsDateRange[1],
+        "to",
+        input$financialsDateRange[2]
+      )
+    )
+    
+    output$summaryTotals <- renderTable({
+      dataToPlot()$el2
+    })
+    
+    
+    output$textPointer <- renderText("blah blah blah")
 
   }
 )
