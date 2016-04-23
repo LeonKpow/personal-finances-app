@@ -12,9 +12,23 @@ shinyUI(fluidPage(
       br(),
       
       conditionalPanel(
-        "$('li.active a').first().html()==='Expenditure Breakdown'",
+        condition = "input.financesPanels == 'panelInOut'",
+        radioButtons("averagingPeriod",
+                     "Select a period to average over:",
+                     c("Daily" = 1,
+                       "Weekly" = 7,
+                       "Fortnightly" = 14,
+                       "Monthly" = 30.42,
+                       "Yearly" = 365)
+                     ),
+        br(),
+        br()
+      ),
+      
+      conditionalPanel(
+        condition = "input.financesPanels == 'panelExpenditure'",
         actionButton("bar","Bar"),
-        
+        br(),
         br()
       ),
       
@@ -22,15 +36,21 @@ shinyUI(fluidPage(
     ),
 
     mainPanel(
-      tabsetPanel(
-        tabPanel("Inflow/Outflow",
+      tabsetPanel(id = "financesPanels",
+        tabPanel(title = "Inflow/Outflow", value = "panelInOut",
           plotOutput("transactions"),
           br(),
           textOutput("summaryTotalsText"),
           br(),
-          tableOutput("summaryTotals")
+          tableOutput("summaryTotals"),
+          br(),
+          textOutput("summaryAveragesText"),
+          br(),
+          tableOutput("summaryAverages")
         ),
-        tabPanel("Expenditure Breakdown", textOutput("textPointer"))
+        tabPanel(title = "Expenditure Breakdown", value = "panelExpenditure",
+          textOutput("textPointer")
+        )
       )
     )
   )

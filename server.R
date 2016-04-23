@@ -30,15 +30,27 @@ shinyServer(
     dataToPlot <- reactive({
       plotData <- financials_combined[(financials_combined$date >= input$financialsDateRange[1]) & (financials_combined$date <= input$financialsDateRange[2]), ]
       plotData$cumulativeNetInflow <- cumsum(plotData$netInflow)
+      #totals <- data.frame(sum(plotData$inflow), sum(plotData$outflow), sum(plotData$netInflow))
+      #colnames(totals) <- c("inflow", "outflow", "netInflow")
+      
+      #return(list(el1 = plotData, el2 = totals))
+      return(plotData)
+    })
+    
+    #calculate data summeries
+    dataSummaries <- reactive({
+      plotData <- dataToPlot()
       totals <- data.frame(sum(plotData$inflow), sum(plotData$outflow), sum(plotData$netInflow))
       colnames(totals) <- c("inflow", "outflow", "netInflow")
       
-      return(list(el1 = plotData, el2 = totals))
+      daysInPeriod <- as.numeric(input$financialsDateRange[2] - input$financialsDateRange[1])
+      averages <- totals * (as.numeric(input$averagingPeriod) / daysInPeriod)
+      return(list(totals = totals, averages = averages))
     })
 
     #Plot Inflow/Outflows
     output$transactions <- renderPlot({
-      ggplot(dataToPlot()$el1) +
+      ggplot(dataToPlot()) +
       geom_bar(aes(date, netInflow, fill = transactionType), stat = "identity", position = "dodge") + 
       geom_line(aes(date, cumulativeNetInflow))
     })
@@ -46,15 +58,32 @@ shinyServer(
     #Summarise totals and print
     output$summaryTotalsText <- renderText(
       paste(
-        "Totals over the period from",
+        "Totals over the period from ",
         input$financialsDateRange[1],
-        "to",
-        input$financialsDateRange[2]
+        " to ",
+        input$financialsDateRange[2],
+        ":",
+        sep = ""
       )
     )
     
     output$summaryTotals <- renderTable({
-      dataToPlot()$el2
+      dataSummaries()$totals
+    })
+    
+    output$summaryAveragesText <- renderText(
+      paste(
+        "Averages over the period from ",
+        input$financialsDateRange[1],
+        " to ",
+        input$financialsDateRange[2],
+        ":",
+        sep = ""
+      )
+    )
+    
+    output$summaryAverages <- renderTable({
+      dataSummaries()$averages
     })
     
     
