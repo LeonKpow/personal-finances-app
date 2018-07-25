@@ -1,9 +1,10 @@
-
-library(googlesheets)
-library(shiny)
-library(ggplot2)
-library(timeDate)
-library(zoo)
+# load packages required for this project
+library(googlesheets) # to read data from my google drive
+library(shiny) # to create/run this app
+library(ggplot2) # to produce required plots
+library(dplyr) # to conveniently wrangle data
+library(timeDate) # introduces a date/time class
+library(zoo) # for convenient date manipulations
 
 # read in and pre-process the data
 source("readAndPreProcessData.R")
