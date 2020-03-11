@@ -81,6 +81,10 @@ colnames(financials_combined)[colnames(financials_combined) == c("credit")] <- "
 # create net inflow field
 financials_combined$netInflow <- financials_combined$inflow - financials_combined$outflow
 
+# decide on inflow/outflow transaction types
+financials_combined <- financials_combined %>%
+  mutate(transactionType = ifelse((netInflow >= 0), "Money In", "Money Out"))
+
 # order by date of entries
 financials_combined <- financials_combined[order(financials_combined$date), ]
 
