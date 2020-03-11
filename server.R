@@ -5,6 +5,7 @@ library(shiny) # to create/run this app
 library(ggplot2) # to produce required plots
 library(dplyr) # to conveniently wrangle data
 library(lubridate) # for convenient date manipulations
+library(DT) # for better presentation of tables in Shiny output
 
 # read in and pre-process the data
 source("readAndPreProcessData.R")
@@ -68,8 +69,15 @@ shinyServer(
       )
     )
     
-    output$summaryTotals <- renderTable({
-      dataSummaries()$totals
+    output$summaryTotals <- DT::renderDataTable({
+      DT::datatable(dataSummaries()$totals,
+                    rownames = FALSE,
+                    options = list(info = FALSE,
+                                   ordering = FALSE,
+                                   lengthChange = FALSE,
+                                   searching = FALSE,
+                                   paging = FALSE)) %>%
+        formatCurrency(c('inflow', 'outflow', 'netInflow'))
     })
     
     output$summaryAveragesText <- renderText(
@@ -83,8 +91,15 @@ shinyServer(
       )
     )
     
-    output$summaryAverages <- renderTable({
-      dataSummaries()$averages
+    output$summaryAverages <- DT::renderDataTable({
+      DT::datatable(dataSummaries()$averages,
+                    rownames = FALSE,
+                    options = list(info = FALSE,
+                                   ordering = FALSE,
+                                   lengthChange = FALSE,
+                                   searching = FALSE,
+                                   paging = FALSE)) %>%
+        formatCurrency(c('inflow', 'outflow', 'netInflow'))
     })
     
     

@@ -42,11 +42,11 @@ shinyUI(fluidPage(
           br(),
           textOutput("summaryTotalsText"),
           br(),
-          tableOutput("summaryTotals"),
+          DT::dataTableOutput("summaryTotals"),
           br(),
           textOutput("summaryAveragesText"),
           br(),
-          tableOutput("summaryAverages")
+          DT::dataTableOutput("summaryAverages")
         ),
         tabPanel(title = "Expenditure Breakdown", value = "panelExpenditure",
           textOutput("textPointer")
