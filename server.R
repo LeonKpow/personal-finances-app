@@ -8,7 +8,7 @@ library(lubridate) # for convenient date manipulations
 library(DT) # for better presentation of tables in Shiny output
 
 # read in and pre-process the data
-source("readAndPreProcessData.R")
+#source("readAndPreProcessData.R")
 
 # server.R
 
@@ -30,20 +30,20 @@ shinyServer(
     
     #Subset data based on date ranges
     dataToPlot <- reactive({
-      plotData <- financials_combined[(financials_combined$date >= input$financialsDateRange[1]) & (financials_combined$date <= input$financialsDateRange[2]), ]
+      plotData <- financials_combined %>%
+        filter((date >= input$financialsDateRange[1]) & (date <= input$financialsDateRange[2])) %>%
+        group_by(date) %>%
+        summarize(inflow = sum(inflow), outflow = sum(outflow), netInflow = sum(netInflow)) %>%
+        arrange(date)
       plotData$cumulativeNetInflow <- cumsum(plotData$netInflow)
-      #totals <- data.frame(sum(plotData$inflow), sum(plotData$outflow), sum(plotData$netInflow))
-      #colnames(totals) <- c("inflow", "outflow", "netInflow")
-      
-      #return(list(el1 = plotData, el2 = totals))
       return(plotData)
     })
     
     #calculate data summeries
     dataSummaries <- reactive({
       plotData <- dataToPlot()
-      totals <- data.frame(sum(plotData$inflow), sum(plotData$outflow), sum(plotData$netInflow))
-      colnames(totals) <- c("inflow", "outflow", "netInflow")
+      totals <- dataToPlot() %>%
+        summarise(inflow = sum(inflow), outflow = sum(outflow), netInflow = sum(netInflow))
       
       daysInPeriod <- as.numeric(input$financialsDateRange[2] - input$financialsDateRange[1])
       averages <- totals * (as.numeric(input$averagingPeriod) / daysInPeriod)
@@ -53,7 +53,7 @@ shinyServer(
     #Plot Inflow/Outflows
     output$transactions <- renderPlot({
       ggplot(dataToPlot()) +
-      geom_bar(aes(date, netInflow, fill = transactionType), stat = "identity", position = "dodge") + 
+      #geom_bar(aes(date, netInflow, fill = transactionType), stat = "identity", position = "dodge") + 
       geom_line(aes(date, cumulativeNetInflow))
     })
     
