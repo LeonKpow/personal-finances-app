@@ -38,7 +38,7 @@ shinyUI(fluidPage(
     mainPanel(
       tabsetPanel(id = "financesPanels",
         tabPanel(title = "Inflow/Outflow", value = "panelInOut",
-          plotOutput("transactions"),
+          plotlyOutput("transactions"),
           br(),
           textOutput("summaryTotalsText"),
           br(),

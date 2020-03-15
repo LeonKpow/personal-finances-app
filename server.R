@@ -2,13 +2,14 @@
 library(googledrive) # to more easily access files on my google drive
 library(googlesheets4) # to read spreadsheet data from my google drive
 library(shiny) # to create/run this app
-library(ggplot2) # to produce required plots
+library(plotly) # to produce required plots
+library(scales) # used for clean currency formatting in plot labels
 library(dplyr) # to conveniently wrangle data
 library(lubridate) # for convenient date manipulations
 library(DT) # for better presentation of tables in Shiny output
 
 # read in and pre-process the data
-#source("readAndPreProcessData.R")
+source("readAndPreProcessData.R")
 
 # server.R
 
@@ -51,10 +52,22 @@ shinyServer(
     })
 
     #Plot Inflow/Outflows
-    output$transactions <- renderPlot({
-      ggplot(dataToPlot()) +
-      #geom_bar(aes(date, netInflow, fill = transactionType), stat = "identity", position = "dodge") + 
-      geom_line(aes(date, cumulativeNetInflow))
+    output$transactions <- renderPlotly({
+      plot_ly(dataToPlot(),
+              x = ~date,
+              y = ~cumulativeNetInflow,
+              type = 'scatter',
+              mode = 'lines',
+              line = list(color = 'black'),
+              hoverinfo = 'text',
+              text = ~paste('Date:', date, '<br>',
+                            'Cumulative Net Inflow:', dollar(cumulativeNetInflow), '<br>',
+                            'Net Inflow:', dollar(netInflow), '<br>',
+                            'Inflow:', dollar(inflow), '<br>',
+                            'Outflow:', dollar(outflow))) %>%
+        layout(xaxis = list(title = "Date"),
+               yaxis = list(title = "Cumulative Inflow of Funds",
+                            tickformat = "$,"))
     })
     
     #Summarise totals and print
