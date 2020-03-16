@@ -1,3 +1,6 @@
+# load packages required for this project
+library(plotly)
+
 # ui.R
 
 shinyUI(fluidPage(
@@ -8,6 +11,8 @@ shinyUI(fluidPage(
       helpText("Shiny app to help visualise my financial spending."),
       
       uiOutput("dateControls"),
+      
+      actionButton("resetDateRanges", "Reset Date Ranges"),
       
       br(),
       

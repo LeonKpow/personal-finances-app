@@ -21,6 +21,16 @@ shinyServer(
       source("readAndPreProcessData.R")
     })
     
+    #Re-set the date ranges if the reset action button is clicked
+    observeEvent(input$resetDateRanges, {
+      output$dateControls <- renderUI({
+        dateRangeInput("financialsDateRange",
+                       "Date range to analyse financials over",
+                       start = minDateInData,
+                       end = maxDateInData)
+      })
+    })
+    
     #Code to dynamically set input date ranges
     output$dateControls <- renderUI({
       dateRangeInput("financialsDateRange",
