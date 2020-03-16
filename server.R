@@ -9,7 +9,7 @@ library(lubridate) # for convenient date manipulations
 library(DT) # for better presentation of tables in Shiny output
 
 # read in and pre-process the data
-source("readAndPreProcessData.R")
+#source("readAndPreProcessData.R")
 
 # server.R
 

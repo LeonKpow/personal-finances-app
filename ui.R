@@ -15,6 +15,7 @@ shinyUI(fluidPage(
       actionButton("resetDateRanges", "Reset Date Ranges"),
       
       br(),
+      br(),
       
       conditionalPanel(
         condition = "input.financesPanels == 'panelInOut'",
@@ -31,8 +32,14 @@ shinyUI(fluidPage(
       ),
       
       conditionalPanel(
-        condition = "input.financesPanels == 'panelExpenditure'",
-        actionButton("bar","Bar"),
+        condition = "input.financesPanels == 'panelRevExp'",
+        radioButtons("groupingLevel",
+                     "Select a grouping level:",
+                     c("Level 1" = "category3",
+                       "Level 2" = "category2",
+                       "Level 3" = "category1",
+                       "Counterparty" = "Counterparty")
+        ),
         br(),
         br()
       ),
@@ -53,7 +60,7 @@ shinyUI(fluidPage(
           br(),
           DT::dataTableOutput("summaryAverages")
         ),
-        tabPanel(title = "Expenditure Breakdown", value = "panelExpenditure",
+        tabPanel(title = "Revenue and Expenditure Breakdown", value = "panelRevExp",
           textOutput("textPointer")
         )
       )
