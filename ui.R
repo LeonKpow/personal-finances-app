@@ -32,7 +32,7 @@ shinyUI(fluidPage(
       ),
       
       conditionalPanel(
-        condition = "input.financesPanels == 'panelRevExp'",
+        condition = "(input.financesPanels == 'panelRevBreakdown') || (input.financesPanels == 'panelExpBreakdown')",#"input.financesPanels == 'panelRevExp'",
         radioButtons("groupingLevel",
                      "Select a grouping level:",
                      c("Level 1" = "category3",
@@ -60,11 +60,12 @@ shinyUI(fluidPage(
           br(),
           DT::dataTableOutput("summaryAverages")
         ),
-        tabPanel(title = "Revenue and Expenditure Breakdown", value = "panelRevExp",
+        tabPanel(title = "Revenue Breakdown", value = "panelRevBreakdown",
           plotlyOutput("revenuePlot"),
           br(),
-          DT::dataTableOutput("revenuesTable"),
-          br(),
+          DT::dataTableOutput("revenuesTable")
+        ),
+        tabPanel(title = "Expenditure Breakdown", value = "panelExpBreakdown",
           plotlyOutput("expensesPlot"),
           br(),
           DT::dataTableOutput("expensesTable")
