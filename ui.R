@@ -38,7 +38,7 @@ shinyUI(fluidPage(
                      c("Level 1" = "category3",
                        "Level 2" = "category2",
                        "Level 3" = "category1",
-                       "Counterparty" = "Counterparty")
+                       "Counterparty" = "counterparty")
         ),
         br(),
         br()
@@ -61,7 +61,13 @@ shinyUI(fluidPage(
           DT::dataTableOutput("summaryAverages")
         ),
         tabPanel(title = "Revenue and Expenditure Breakdown", value = "panelRevExp",
-          textOutput("textPointer")
+          plotlyOutput("revenuePlot"),
+          br(),
+          DT::dataTableOutput("revenuesTable"),
+          br(),
+          plotlyOutput("expensesPlot"),
+          br(),
+          DT::dataTableOutput("expensesTable")
         )
       )
     )
