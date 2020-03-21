@@ -61,12 +61,17 @@ shinyUI(fluidPage(
           DT::dataTableOutput("summaryAverages")
         ),
         tabPanel(title = "Revenue Breakdown", value = "panelRevBreakdown",
-          plotlyOutput("revenuePlot"),
+          plotlyOutput("revenueTimeSeries"),
+          br(),
+          paste("Breakdown of revenues over requested period:"),
           br(),
           DT::dataTableOutput("revenuesTable")
         ),
         tabPanel(title = "Expenditure Breakdown", value = "panelExpBreakdown",
-          plotlyOutput("expensesPlot"),
+          plotlyOutput("expensesTimeSeries"),
+          br(),
+          paste("Breakdown of expenses over requested period:"),
+          br(),
           br(),
           DT::dataTableOutput("expensesTable")
         )

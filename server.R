@@ -53,25 +53,42 @@ shinyServer(
     #Produce aggregations of revenues and expenses
     revenueAndExpenseData <- reactive({
       groupingLevel <- as.name(input$groupingLevel)
-      aggregatedData <- financials_combined %>%
+      aggregatedMonthlyData <- financials_combined %>%
         filter((date >= input$financialsDateRange[1]) & (date <= input$financialsDateRange[2])) %>%
-        group_by(!!groupingLevel) %>%
+        group_by(monthOfTransaction, !!groupingLevel) %>%
         summarize(netInflow = sum(netInflow))
       
-      revenues <- aggregatedData %>%
+      revenuesBreakdown <- aggregatedMonthlyData %>%
         filter(netInflow > 0) %>%
+        group_by(!!groupingLevel) %>%
+        summarize(netInflow = sum(netInflow)) %>%
         arrange(desc(netInflow)) %>%
-        mutate(netInflowProportion = netInflow / sum(netInflow))
-      colnames(revenues) <- c("category", "revenues", "revenueProportion")
+        mutate(netInflowProportion = netInflow / sum(netInflow)) %>%
+        rename(category = !!groupingLevel, revenues = netInflow, revenueProportion = netInflowProportion)
       
-      expenses <- aggregatedData %>%
+      revenuesMonthly <- aggregatedMonthlyData %>%
+        filter(netInflow > 0) %>%
+        group_by(monthOfTransaction) %>%
+        summarize(netInflow = sum(netInflow)) %>%
+        rename(month = monthOfTransaction, revenues = netInflow)
+      
+      expensesBreakdown <- aggregatedMonthlyData %>%
         filter(netInflow < 0) %>%
         mutate(netInflow = -netInflow) %>%
+        group_by(!!groupingLevel) %>%
+        summarize(netInflow = sum(netInflow)) %>%
         arrange(desc(netInflow)) %>%
-        mutate(netInflowProportion = netInflow / sum(netInflow))
-      colnames(expenses) <- c("category", "expenses", "expenseProportion")
+        mutate(netInflowProportion = netInflow / sum(netInflow)) %>%
+        rename(category = !!groupingLevel, expenses = netInflow, expenseProportion = netInflowProportion)
       
-      return(list(revenues = revenues, expenses = expenses))
+      expensesMonthly <- aggregatedMonthlyData %>%
+        filter(netInflow < 0) %>%
+        mutate(netInflow = -netInflow) %>%
+        group_by(monthOfTransaction) %>%
+        summarize(netInflow = sum(netInflow)) %>%
+        rename(month = monthOfTransaction, expenses = netInflow)
+      
+      return(list(revenuesBreakdown = revenuesBreakdown, revenuesMonthly = revenuesMonthly, expensesBreakdown = expensesBreakdown, expensesMonthly = expensesMonthly))
     })
     
     #calculate data summeries
@@ -150,25 +167,38 @@ shinyServer(
     })
     
     #Plot Revenues
-    output$revenuePlot <- renderPlotly({
-      plot_ly(revenueAndExpenseData()$revenues,
-              x = ~revenues,
-              y = ~reorder(category, revenues),
+    output$revenueTimeSeries <- renderPlotly({
+      plot_ly(revenueAndExpenseData()$revenuesMonthly,
+              x = ~month,
+              y = ~revenues,
               type = 'bar',
-              orientation = 'h',
               hoverinfo = 'text',
-              text = ~paste(category, '<br>',
-                            dollar(revenues), '<br>',
-                            percent(revenueProportion, accuracy = 0.01))) %>%
-        layout(title = "Revenues",
-               xaxis = list(title = "Revenues",
-                            tickformat = "$,"),
-               yaxis = list(title = "Category"))
+              text = ~paste(dollar(revenues), '<br>', month)) %>%
+        layout(title = "Monthly Revenues",
+               xaxis = list(title = "Month"),
+               yaxis = list(title = "Revenues",
+                            tickformat = "$,"))
     })
+    
+    # output$revenuePlot <- renderPlotly({
+    #   plot_ly(revenueAndExpenseData()$revenuesBreakdown,
+    #           x = ~revenues,
+    #           y = ~reorder(category, revenues),
+    #           type = 'bar',
+    #           orientation = 'h',
+    #           hoverinfo = 'text',
+    #           text = ~paste(category, '<br>',
+    #                         dollar(revenues), '<br>',
+    #                         percent(revenueProportion, accuracy = 0.01))) %>%
+    #     layout(title = "Revenues",
+    #            xaxis = list(title = "Revenues",
+    #                         tickformat = "$,"),
+    #            yaxis = list(title = "Category"))
+    # })
     
     #Print revenue table
     output$revenuesTable <- DT::renderDataTable({
-      DT::datatable(revenueAndExpenseData()$revenues,
+      DT::datatable(revenueAndExpenseData()$revenuesBreakdown,
                     colnames = c("Category", "Revenues", "Proportion of Total"),
                     options = list(searching = FALSE)
                     ) %>%
@@ -177,25 +207,38 @@ shinyServer(
     })
     
     #Plot Expenses
-    output$expensesPlot <- renderPlotly({
-      plot_ly(revenueAndExpenseData()$expenses,
-              x = ~expenses,
-              y = ~reorder(category, expenses),
+    output$expensesTimeSeries <- renderPlotly({
+      plot_ly(revenueAndExpenseData()$expensesMonthly,
+              x = ~month,
+              y = ~expenses,
               type = 'bar',
-              orientation = 'h',
               hoverinfo = 'text',
-              text = ~paste(category, '<br>',
-                            dollar(expenses), '<br>',
-                            percent(expenseProportion, accuracy = 0.01))) %>%
-        layout(title = "Expenses",
-               xaxis = list(title = "Expenses",
-                            tickformat = "$,"),
-               yaxis = list(title = "Category"))
+              text = ~paste(dollar(expenses), '<br>', month)) %>%
+        layout(title = "Monthly Expenses",
+               xaxis = list(title = "Month"),
+               yaxis = list(title = "Expenses",
+                            tickformat = "$,"))
     })
+    
+    # output$expensesPlot <- renderPlotly({
+    #   plot_ly(revenueAndExpenseData()$expensesBreakdown,
+    #           x = ~expenses,
+    #           y = ~reorder(category, expenses),
+    #           type = 'bar',
+    #           orientation = 'h',
+    #           hoverinfo = 'text',
+    #           text = ~paste(category, '<br>',
+    #                         dollar(expenses), '<br>',
+    #                         percent(expenseProportion, accuracy = 0.01))) %>%
+    #     layout(title = "Expenses",
+    #            xaxis = list(title = "Expenses",
+    #                         tickformat = "$,"),
+    #            yaxis = list(title = "Category"))
+    # })
     
     #Print expenses table
     output$expensesTable <- DT::renderDataTable({
-      DT::datatable(revenueAndExpenseData()$expenses,
+      DT::datatable(revenueAndExpenseData()$expensesBreakdown,
                     colnames = c("Category", "Expenses", "Proportion of Total"),
                     options = list(searching = FALSE)
       ) %>%
