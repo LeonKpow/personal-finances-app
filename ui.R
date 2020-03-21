@@ -65,6 +65,7 @@ shinyUI(fluidPage(
           br(),
           paste("Breakdown of revenues over requested period:"),
           br(),
+          br(),
           DT::dataTableOutput("revenuesTable")
         ),
         tabPanel(title = "Expenditure Breakdown", value = "panelExpBreakdown",

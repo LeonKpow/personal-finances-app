@@ -88,7 +88,10 @@ shinyServer(
         summarize(netInflow = sum(netInflow)) %>%
         rename(month = monthOfTransaction, expenses = netInflow)
       
-      return(list(revenuesBreakdown = revenuesBreakdown, revenuesMonthly = revenuesMonthly, expensesBreakdown = expensesBreakdown, expensesMonthly = expensesMonthly))
+      return(list(revenuesBreakdown = revenuesBreakdown,
+                  revenuesMonthly = revenuesMonthly,
+                  expensesBreakdown = expensesBreakdown,
+                  expensesMonthly = expensesMonthly))
     })
     
     #calculate data summeries
