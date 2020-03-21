@@ -52,8 +52,10 @@ shinyServer(
     
     #Produce aggregations of revenues and expenses
     revenueAndExpenseData <- reactive({
+      groupingLevel <- as.name(input$groupingLevel)
       aggregatedData <- financials_combined %>%
-        group_by_(input$groupingLevel) %>%
+        filter((date >= input$financialsDateRange[1]) & (date <= input$financialsDateRange[2])) %>%
+        group_by(!!groupingLevel) %>%
         summarize(netInflow = sum(netInflow))
       
       revenues <- aggregatedData %>%
