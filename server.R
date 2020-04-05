@@ -9,7 +9,7 @@ library(lubridate) # for convenient date manipulations
 library(DT) # for better presentation of tables in Shiny output
 
 # read in and pre-process the data
-#source("readAndPreProcessData.R")
+source("readAndPreProcessData.R")
 
 # server.R
 
@@ -332,22 +332,6 @@ shinyServer(
                             tickformat = "$,"))
     })
     
-    # output$revenuePlot <- renderPlotly({
-    #   plot_ly(revenueAndExpenseData()$revenuesBreakdown,
-    #           x = ~revenues,
-    #           y = ~reorder(category, revenues),
-    #           type = 'bar',
-    #           orientation = 'h',
-    #           hoverinfo = 'text',
-    #           text = ~paste(category, '<br>',
-    #                         dollar(revenues), '<br>',
-    #                         percent(revenueProportion, accuracy = 0.01))) %>%
-    #     layout(title = "Revenues",
-    #            xaxis = list(title = "Revenues",
-    #                         tickformat = "$,"),
-    #            yaxis = list(title = "Category"))
-    # })
-    
     #Print revenue table
     output$revenuesTable <- DT::renderDataTable({
       DT::datatable(revenueAndExpenseData()$revenuesBreakdown,
@@ -419,22 +403,6 @@ shinyServer(
                yaxis = list(title = "Expenses",
                             tickformat = "$,"))
     })
-    
-    # output$expensesPlot <- renderPlotly({
-    #   plot_ly(revenueAndExpenseData()$expensesBreakdown,
-    #           x = ~expenses,
-    #           y = ~reorder(category, expenses),
-    #           type = 'bar',
-    #           orientation = 'h',
-    #           hoverinfo = 'text',
-    #           text = ~paste(category, '<br>',
-    #                         dollar(expenses), '<br>',
-    #                         percent(expenseProportion, accuracy = 0.01))) %>%
-    #     layout(title = "Expenses",
-    #            xaxis = list(title = "Expenses",
-    #                         tickformat = "$,"),
-    #            yaxis = list(title = "Category"))
-    # })
     
     #Print expenses table
     output$expensesTable <- DT::renderDataTable({
