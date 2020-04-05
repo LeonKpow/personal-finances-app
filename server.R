@@ -9,7 +9,7 @@ library(lubridate) # for convenient date manipulations
 library(DT) # for better presentation of tables in Shiny output
 
 # read in and pre-process the data
-source("readAndPreProcessData.R")
+#source("readAndPreProcessData.R")
 
 # server.R
 
@@ -39,7 +39,25 @@ shinyServer(
                      end = maxDateInData)
     })
     
-    #Subset data based on date ranges
+    #Code to dynamically set further revenue filtering selections
+    output$revenueFurtherFilteringSelections <- renderUI({
+      selectInput("revenueFurtherFiltering",
+                  "Select categories to further filter the data on:",
+                  choices = revenueAndExpenseData()$revenuesCategoriesList,
+                  multiple = TRUE
+                  )
+    })
+    
+    #Code to dynamically set further expense filtering selections
+    output$expenseFurtherFilteringSelections <- renderUI({
+      selectInput("expenseFurtherFiltering",
+                  "Select categories to further filter the data on:",
+                  choices = revenueAndExpenseData()$expensesCategoriesList,
+                  multiple = TRUE
+      )
+    })
+    
+    #Subset data based on date ranges and produce data for inflow/outflow plot
     dataToPlot <- reactive({
       plotData <- financials_combined %>%
         filter((date >= input$financialsDateRange[1]) & (date <= input$financialsDateRange[2])) %>%
@@ -66,6 +84,18 @@ shinyServer(
         mutate(netInflowProportion = netInflow / sum(netInflow)) %>%
         rename(category = !!groupingLevel, revenues = netInflow, revenueProportion = netInflowProportion)
       
+      revenuesCounterpartyBreakdown <- financials_combined %>%
+        filter((date >= input$financialsDateRange[1]) & (date <= input$financialsDateRange[2])) %>%
+        group_by(counterparty) %>%
+        filter(netInflow > 0) %>%
+        summarize(netInflow = sum(netInflow)) %>%
+        arrange(desc(netInflow)) %>%
+        mutate(netInflowProportion = netInflow / sum(netInflow)) %>%
+        rename(counterparty = counterparty, revenues = netInflow, revenueProportion = netInflowProportion)
+      
+      revenuesCategoriesList <- revenuesBreakdown %>%
+        distinct(category)
+      
       revenuesMonthly <- aggregatedMonthlyData %>%
         filter(netInflow > 0) %>%
         group_by(monthOfTransaction) %>%
@@ -81,6 +111,19 @@ shinyServer(
         mutate(netInflowProportion = netInflow / sum(netInflow)) %>%
         rename(category = !!groupingLevel, expenses = netInflow, expenseProportion = netInflowProportion)
       
+      expensesCounterpartyBreakdown <- financials_combined %>%
+        filter((date >= input$financialsDateRange[1]) & (date <= input$financialsDateRange[2])) %>%
+        group_by(counterparty) %>%
+        filter(netInflow < 0) %>%
+        mutate(netInflow = -netInflow) %>%
+        summarize(netInflow = sum(netInflow)) %>%
+        arrange(desc(netInflow)) %>%
+        mutate(netInflowProportion = netInflow / sum(netInflow)) %>%
+        rename(counterparty = counterparty, expenses = netInflow, expenseProportion = netInflowProportion)
+      
+      expensesCategoriesList <- expensesBreakdown %>%
+        distinct(category)
+      
       expensesMonthly <- aggregatedMonthlyData %>%
         filter(netInflow < 0) %>%
         mutate(netInflow = -netInflow) %>%
@@ -89,9 +132,115 @@ shinyServer(
         rename(month = monthOfTransaction, expenses = netInflow)
       
       return(list(revenuesBreakdown = revenuesBreakdown,
+                  revenuesCounterpartyBreakdown = revenuesCounterpartyBreakdown,
+                  revenuesCategoriesList = revenuesCategoriesList,
                   revenuesMonthly = revenuesMonthly,
                   expensesBreakdown = expensesBreakdown,
+                  expensesCounterpartyBreakdown = expensesCounterpartyBreakdown,
+                  expensesCategoriesList = expensesCategoriesList,
                   expensesMonthly = expensesMonthly))
+    })
+    
+    #Produce further filtered aggregations of revenues and expenses
+    furtherFilteredRevenueData <- reactive({
+      categoryLevel <- as.name(input$groupingLevel)
+      
+      if (input$groupingLevel == c("category3")) {
+        furtherGroupingLevel <- c("category2")
+      } else if (input$groupingLevel == c("category2")) {
+        furtherGroupingLevel <- c("category1")
+      } else if (input$groupingLevel == c("category1")) {
+        furtherGroupingLevel <- c("counterparty")
+      } else if (input$groupingLevel == c("counterparty")) {
+        furtherGroupingLevel <- c("counterparty")
+      }
+      furtherGroupingLevel <- as.name(furtherGroupingLevel)
+      
+      aggregatedMonthlyData <- financials_combined %>%
+        filter((date >= input$financialsDateRange[1]) & (date <= input$financialsDateRange[2])) %>%
+        filter(!!categoryLevel %in% input$revenueFurtherFiltering) %>%
+        group_by(monthOfTransaction, !!furtherGroupingLevel) %>%
+        summarize(netInflow = sum(netInflow))
+
+      revenuesBreakdown <- aggregatedMonthlyData %>%
+        filter(netInflow > 0) %>%
+        group_by(!!furtherGroupingLevel) %>%
+        summarize(netInflow = sum(netInflow)) %>%
+        arrange(desc(netInflow)) %>%
+        mutate(netInflowProportion = netInflow / sum(netInflow)) %>%
+        rename(category = !!furtherGroupingLevel, revenues = netInflow, revenueProportion = netInflowProportion)
+
+      revenuesCounterpartyBreakdown <- financials_combined %>%
+        filter((date >= input$financialsDateRange[1]) & (date <= input$financialsDateRange[2])) %>%
+        filter(!!categoryLevel %in% input$revenueFurtherFiltering) %>%
+        group_by(counterparty) %>%
+        filter(netInflow > 0) %>%
+        summarize(netInflow = sum(netInflow)) %>%
+        arrange(desc(netInflow)) %>%
+        mutate(netInflowProportion = netInflow / sum(netInflow)) %>%
+        rename(counterparty = counterparty, revenues = netInflow, revenueProportion = netInflowProportion)
+
+      revenuesMonthly <- aggregatedMonthlyData %>%
+        filter(netInflow > 0) %>%
+        group_by(monthOfTransaction) %>%
+        summarize(netInflow = sum(netInflow)) %>%
+        rename(month = monthOfTransaction, revenues = netInflow)
+      
+      return(list(furtherRevenuesBreakdown = revenuesBreakdown,
+                  furtherRevenuesCounterpartyBreakdown = revenuesCounterpartyBreakdown,
+                  furtherRevenuesMonthly = revenuesMonthly))
+    })
+    
+    furtherFilteredExpenseData <- reactive({
+      categoryLevel <- as.name(input$groupingLevel)
+      
+      if (input$groupingLevel == c("category3")) {
+        furtherGroupingLevel <- c("category2")
+      } else if (input$groupingLevel == c("category2")) {
+        furtherGroupingLevel <- c("category1")
+      } else if (input$groupingLevel == c("category1")) {
+        furtherGroupingLevel <- c("counterparty")
+      } else if (input$groupingLevel == c("counterparty")) {
+        furtherGroupingLevel <- c("counterparty")
+      }
+      furtherGroupingLevel <- as.name(furtherGroupingLevel)
+      
+      aggregatedMonthlyData <- financials_combined %>%
+        filter((date >= input$financialsDateRange[1]) & (date <= input$financialsDateRange[2])) %>%
+        filter(!!categoryLevel %in% input$expenseFurtherFiltering) %>%
+        group_by(monthOfTransaction, !!furtherGroupingLevel) %>%
+        summarize(netInflow = sum(netInflow))
+      
+      expensesBreakdown <- aggregatedMonthlyData %>%
+        filter(netInflow < 0) %>%
+        mutate(netInflow = -netInflow) %>%
+        group_by(!!furtherGroupingLevel) %>%
+        summarize(netInflow = sum(netInflow)) %>%
+        arrange(desc(netInflow)) %>%
+        mutate(netInflowProportion = netInflow / sum(netInflow)) %>%
+        rename(category = !!furtherGroupingLevel, expenses = netInflow, expenseProportion = netInflowProportion)
+      
+      expensesCounterpartyBreakdown <- financials_combined %>%
+        filter((date >= input$financialsDateRange[1]) & (date <= input$financialsDateRange[2])) %>%
+        filter(!!categoryLevel %in% input$expenseFurtherFiltering) %>%
+        group_by(counterparty) %>%
+        filter(netInflow < 0) %>%
+        mutate(netInflow = -netInflow) %>%
+        summarize(netInflow = sum(netInflow)) %>%
+        arrange(desc(netInflow)) %>%
+        mutate(netInflowProportion = netInflow / sum(netInflow)) %>%
+        rename(counterparty = counterparty, expenses = netInflow, expenseProportion = netInflowProportion)
+      
+      expensesMonthly <- aggregatedMonthlyData %>%
+        filter(netInflow < 0) %>%
+        mutate(netInflow = -netInflow) %>%
+        group_by(monthOfTransaction) %>%
+        summarize(netInflow = sum(netInflow)) %>%
+        rename(month = monthOfTransaction, expenses = netInflow)
+      
+      return(list(furtherExpensesBreakdown = expensesBreakdown,
+                  furtherExpensesCounterpartyBreakdown = expensesCounterpartyBreakdown,
+                  furtherExpensesMonthly = expensesMonthly))
     })
     
     #calculate data summeries
@@ -203,8 +352,56 @@ shinyServer(
     output$revenuesTable <- DT::renderDataTable({
       DT::datatable(revenueAndExpenseData()$revenuesBreakdown,
                     colnames = c("Category", "Revenues", "Proportion of Total"),
-                    options = list(searching = FALSE)
+                    options = list(searching = FALSE,
+                                   lengthMenu = list(c(10, 25, 50, 100, -1), list('10', '25', '50','100', 'All')))
                     ) %>%
+        formatCurrency(c("revenues")) %>%
+        formatPercentage(c("revenueProportion"), digits = 2)
+    })
+    
+    #Print revenue counterparty breakdown table
+    output$revenuesCounterpartyTable <- DT::renderDataTable({
+      DT::datatable(revenueAndExpenseData()$revenuesCounterpartyBreakdown,
+                    colnames = c("Counterparty", "Revenues", "Proportion of Total"),
+                    options = list(searching = FALSE,
+                                   lengthMenu = list(c(10, 25, 50, 100, -1), list('10', '25', '50','100', 'All')))
+      ) %>%
+        formatCurrency(c("revenues")) %>%
+        formatPercentage(c("revenueProportion"), digits = 2)
+    })
+    
+    #Plot further filtered Revenues
+    output$furtherFilteredRevenueTimeSeries <- renderPlotly({
+      plot_ly(furtherFilteredRevenueData()$furtherRevenuesMonthly,
+              x = ~month,
+              y = ~revenues,
+              type = 'bar',
+              hoverinfo = 'text',
+              text = ~paste(dollar(revenues), '<br>', month)) %>%
+        layout(title = "Monthly Revenues",
+               xaxis = list(title = "Month"),
+               yaxis = list(title = "Revenues",
+                            tickformat = "$,"))
+    })
+    
+    #Print further filtered revenue breakdown
+    output$furtherFilteredRevenuesTable <- DT::renderDataTable({
+      DT::datatable(furtherFilteredRevenueData()$furtherRevenuesBreakdown,
+                    colnames = c("Category", "Revenues", "Proportion of Total"),
+                    options = list(searching = FALSE,
+                                   lengthMenu = list(c(10, 25, 50, 100, -1), list('10', '25', '50','100', 'All')))
+      ) %>%
+        formatCurrency(c("revenues")) %>%
+        formatPercentage(c("revenueProportion"), digits = 2)
+    })
+    
+    #Print further filtered revenue breakdown by counterparty
+    output$furtherFilteredRevenuesCounterpartyTable <- DT::renderDataTable({
+      DT::datatable(furtherFilteredRevenueData()$furtherRevenuesCounterpartyBreakdown,
+                    colnames = c("Counterparty", "Revenues", "Proportion of Total"),
+                    options = list(searching = FALSE,
+                                   lengthMenu = list(c(10, 25, 50, 100, -1), list('10', '25', '50','100', 'All')))
+      ) %>%
         formatCurrency(c("revenues")) %>%
         formatPercentage(c("revenueProportion"), digits = 2)
     })
@@ -243,7 +440,55 @@ shinyServer(
     output$expensesTable <- DT::renderDataTable({
       DT::datatable(revenueAndExpenseData()$expensesBreakdown,
                     colnames = c("Category", "Expenses", "Proportion of Total"),
-                    options = list(searching = FALSE)
+                    options = list(searching = FALSE,
+                                   lengthMenu = list(c(10, 25, 50, 100, -1), list('10', '25', '50','100', 'All')))
+      ) %>%
+        formatCurrency(c("expenses")) %>%
+        formatPercentage(c("expenseProportion"), digits = 2)
+    })
+    
+    #Print expenses counterparty table
+    output$expensesCounterpartyTable <- DT::renderDataTable({
+      DT::datatable(revenueAndExpenseData()$expensesCounterpartyBreakdown,
+                    colnames = c("Counterparty", "Expenses", "Proportion of Total"),
+                    options = list(searching = FALSE,
+                                   lengthMenu = list(c(10, 25, 50, 100, -1), list('10', '25', '50','100', 'All')))
+      ) %>%
+        formatCurrency(c("expenses")) %>%
+        formatPercentage(c("expenseProportion"), digits = 2)
+    })
+    
+    #Plot further filtered Expenses
+    output$furtherFilteredExpensesTimeSeries <- renderPlotly({
+      plot_ly(furtherFilteredExpenseData()$furtherExpensesMonthly,
+              x = ~month,
+              y = ~expenses,
+              type = 'bar',
+              hoverinfo = 'text',
+              text = ~paste(dollar(expenses), '<br>', month)) %>%
+        layout(title = "Monthly Expenses",
+               xaxis = list(title = "Month"),
+               yaxis = list(title = "Expenses",
+                            tickformat = "$,"))
+    })
+    
+    #Print further filtered expense breakdown
+    output$furtherFilteredExpensesTable <- DT::renderDataTable({
+      DT::datatable(furtherFilteredExpenseData()$furtherExpensesBreakdown,
+                    colnames = c("Category", "Expenses", "Proportion of Total"),
+                    options = list(searching = FALSE,
+                                   lengthMenu = list(c(10, 25, 50, 100, -1), list('10', '25', '50','100', 'All')))
+      ) %>%
+        formatCurrency(c("expenses")) %>%
+        formatPercentage(c("expenseProportion"), digits = 2)
+    })
+    
+    #Print further filtered expense breakdown by counterparty
+    output$furtherFilteredExpensesCounterpartyTable <- DT::renderDataTable({
+      DT::datatable(furtherFilteredExpenseData()$furtherExpensesCounterpartyBreakdown,
+                    colnames = c("Counterparty", "Expenses", "Proportion of Total"),
+                    options = list(searching = FALSE,
+                                   lengthMenu = list(c(10, 25, 50, 100, -1), list('10', '25', '50','100', 'All')))
       ) %>%
         formatCurrency(c("expenses")) %>%
         formatPercentage(c("expenseProportion"), digits = 2)
